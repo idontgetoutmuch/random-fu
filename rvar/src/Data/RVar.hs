@@ -195,13 +195,7 @@ runRVarTWith liftN (RVarT m) gen = runPromptT return bindP bindN m
 
 {-# INLINE uniformPrimM #-}
 uniformPrimM :: StatefulGen g m => Prim t -> g -> m t
-uniformPrimM prim g =
-    case prim of
-        PrimWord8             -> uniformWord8 g
-        PrimWord16            -> uniformWord16 g
-        PrimWord32            -> uniformWord32 g
-        PrimWord64            -> uniformWord64 g
-        PrimShortByteString n -> uniformShortByteString n g
+uniformPrimM (Prim f) g = uniformWord32 g >>= return . f
 
 
 -- |@sampleRVarTWith lift x@ is equivalent to @runRVarTWith lift x 'StdRandom'@.
@@ -268,17 +262,10 @@ instance MTL.MonadIO m => MTL.MonadIO (RVarT m) where
 data RGen = RGen
 
 instance StatefulGen RGen (RVarT m) where
-    uniformWord8 RGen = RVarT $ prompt PrimWord8
-    {-# INLINE uniformWord8 #-}
-    uniformWord16 RGen = RVarT $ prompt PrimWord16
-    {-# INLINE uniformWord16 #-}
-    uniformWord32 RGen = RVarT $ prompt PrimWord32
+    uniformWord32 RGen             = prompt (Prim id)
     {-# INLINE uniformWord32 #-}
-    uniformWord64 RGen = RVarT $ prompt PrimWord64
-    {-# INLINE uniformWord64 #-}
-    uniformShortByteString n RGen = RVarT $ prompt (PrimShortByteString n)
+    uniformShortByteString _n RGen = error "ShortByteString"
     {-# INLINE uniformShortByteString #-}
-
 
 uniformRVarT :: Uniform a => RVarT m a
 uniformRVarT = uniformM RGen
